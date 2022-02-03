@@ -1,3 +1,5 @@
 {
-   "TEST_PROJECT_PATH": "/home/xiaoqian/Documents/IFT3913/IFT3913Devoir1/jfreechart-master" 
+   "TEST_PROJECT_PATH": "/home/xiaoqian/Documents/IFT3913/IFT3913Devoir1/jfreechart-master",
+   "CSV_CLASS_PATH": "/home/xiaoqian/Documents/IFT3913/IFT3913Devoir1/classes.csv",
+   "CSV_PAQUET_PATH": "/home/xiaoqian/Documents/IFT3913/IFT3913Devoir1/paquets.csv"
 }
