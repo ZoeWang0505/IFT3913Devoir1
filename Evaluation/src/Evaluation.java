@@ -4,8 +4,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONTokener;
 import org.apache.commons.io.FileUtils;
-
-
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+import java.util.regex.MatchResult;
+import java.util.regex.PatternSyntaxException;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,8 +20,13 @@ public class Evaluation {
    String pHeaderlist [] = {"chemin", "paquet", "paquet_LOC", "paquet_CLOC", "paquet_DC"};
    
     static Boolean containCommtaire(String line){
-        //TODO:
 
+        String pattern = "\\/\\*(\\*(?!\\/)|[^*])*\\*\\/|\\/\\/";
+        Pattern r = Pattern.compile(pattern);
+        Matcher m = r.matcher(line);
+        if(m.find()){
+            return true;
+        }
         return false;
     }
 
@@ -33,7 +40,7 @@ public class Evaluation {
             int commtaireline = 0;
             while(scan.hasNextLine()){
                 String line = scan.nextLine();
-                if(line == "")
+                if(line.compareTo("") == 0)
                    continue;
                 if(containCommtaire(line)){
                     commtaireline ++;
@@ -55,7 +62,7 @@ public class Evaluation {
        //paquet_CLOC : nombre de lignes de code d’un paquet qui contiennent des commentaires
        //paquet_DC : densité de commentaires pour une classe : classe_DC = classe_CLOC / classe_LOC
        //paquet_DC : densité de commentaires pour un paquet : paquet_DC = paquet_CLOC / paquet_LOC
-    
+       //
     }
 
 
