@@ -33,6 +33,8 @@ public class Evaluation {
             int commtaireline = 0;
             while(scan.hasNextLine()){
                 String line = scan.nextLine();
+                if(line == "")
+                   continue;
                 if(containCommtaire(line)){
                     commtaireline ++;
                 }
@@ -48,7 +50,12 @@ public class Evaluation {
         }
     }
     static void parsingPaquet(File file,JSONObject eva_class){
- //TODO:
+       //TODO:
+       //paquet_LOC : nombre de lignes de code d’un paquet (java package) -- la somme des LOC de ses classes
+       //paquet_CLOC : nombre de lignes de code d’un paquet qui contiennent des commentaires
+       //paquet_DC : densité de commentaires pour une classe : classe_DC = classe_CLOC / classe_LOC
+       //paquet_DC : densité de commentaires pour un paquet : paquet_DC = paquet_CLOC / paquet_LOC
+    
     }
 
 
