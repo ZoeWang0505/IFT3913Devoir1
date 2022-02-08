@@ -96,16 +96,19 @@ public class Evaluation {
        //TODO:
         int paquet_LOC;
         int paquet_CLOC;
-        File [] packageContent = file.listFiles();
+        
+        //Incorrect. Please use file as a java file, same process as parsingClass()
+        
+        // File [] packageContent = file.listFiles();
 
-        for(File content:packageContent){
-            if(content.isFile()){
+        // for(File content:packageContent){
+        //     if(content.isFile()){
 
-            }
-            else{
+        //     }
+        //     else{
 
-            }
-        }
+        //     }
+        // }
 
        //paquet_LOC : nombre de lignes de code d’un paquet (java package) -- la somme des LOC de ses classes
        //paquet_CLOC : nombre de lignes de code d’un paquet qui contiennent des commentaires
@@ -167,9 +170,7 @@ public class Evaluation {
                 }
                 csv += "\n";
             }
-            //String csv = CDL.toString(jsonData);
             
-            //String csv = CDL.toString(jsonData);
             FileUtils.writeStringToFile(file, csv, "UTF-8");
 
         } catch (JSONException e) {
