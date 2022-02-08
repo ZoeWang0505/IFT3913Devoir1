@@ -1,4 +1,3 @@
-import org.json.CDL;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -6,18 +5,16 @@ import org.json.JSONTokener;
 import org.apache.commons.io.FileUtils;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-import java.util.regex.MatchResult;
-import java.util.regex.PatternSyntaxException;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-//import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Scanner;
 
 public class Evaluation {
    static String cHeaderlist [] = {"chemin", "class", "classe_LOC", "classe_CLOC", "classe_DC"};
-   String pHeaderlist [] = {"chemin", "paquet", "paquet_LOC", "paquet_CLOC", "paquet_DC"};
+   static String pHeaderlist [] = {"chemin", "paquet", "paquet_LOC", "paquet_CLOC", "paquet_DC"};
    static enum commentType {SINGLE_LINE, MULTICOMM_BEGIN, NON_COMM, MULTICOMM_END, IN_MULTCOMM};
    
     static commentType containCommtaire(String line, Boolean inMultiCommtaire){
@@ -86,20 +83,19 @@ public class Evaluation {
                         break;
                 }
             }
-            eva_class.put(cHeaderlist[3], lineNumber);//classe_LOC
-            eva_class.put(cHeaderlist[4], commtaireline); //classe_CLOC    
-             
+            eva_class.put(cHeaderlist[2], lineNumber);//classe_LOC
+            eva_class.put(cHeaderlist[3], commtaireline); //classe_CLOC    
+            eva_class.put(cHeaderlist[4], (double)commtaireline/lineNumber); //classe_DC   
             scan.close();
 
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
-    static void parsingPaquet(String folder,JSONObject eva_paquet){
+    static void parsingPaquet(File file,JSONObject eva_paquet){
        //TODO:
         int paquet_LOC;
         int paquet_CLOC;
-        File file = new File(folder);
         File [] packageContent = file.listFiles();
 
         for(File content:packageContent){
@@ -130,12 +126,16 @@ public class Evaluation {
                         JSONObject eva_class = new JSONObject();
                         String className = file.getName();
                         String chemin = path + "/" + className;
-
                         
                         eva_class.put(cHeaderlist[0], chemin); //chemin
                         eva_class.put(cHeaderlist[1], className.substring(0, className.indexOf(".java")));//class
                         parsingClass(file, eva_class);
                         classdata.put(eva_class);
+
+                        JSONObject eva_paquet = new JSONObject();
+                        parsingPaquet(file, eva_paquet);
+                        paquetdata.put(eva_paquet);
+
                     }
                     //
                 } else {
@@ -149,11 +149,27 @@ public class Evaluation {
         }
     }
 
-    static void writeCSV(JSONArray jsonData, String filepath){
+    static void writeCSV(JSONArray jsonData, String filepath,String [] headerlist){
         try {
 
             File file=new File(filepath);
-            String csv = CDL.toString(jsonData);
+            String csv = "";
+            for(int i = 0; i < headerlist.length; i ++){ 
+                csv += headerlist[i] + ",";
+            }
+            csv += "\n";
+            Iterator<Object> iterator = jsonData.iterator();
+            while(iterator.hasNext()) {
+                JSONObject obj = (JSONObject)iterator.next();
+                for(int i = 0; i < headerlist.length; i ++){ 
+                    String value = obj.get(headerlist[i]).toString();
+                    csv += value + ",";
+                }
+                csv += "\n";
+            }
+            //String csv = CDL.toString(jsonData);
+            
+            //String csv = CDL.toString(jsonData);
             FileUtils.writeStringToFile(file, csv, "UTF-8");
 
         } catch (JSONException e) {
@@ -188,7 +204,7 @@ public class Evaluation {
         JSONArray paquetData = new JSONArray();
         evaluate(folder, path, classData, paquetData);
 
-        writeCSV(classData, csvClassPath);
-        writeCSV(paquetData, csvPaquePath);
+        writeCSV(classData, csvClassPath, cHeaderlist);
+        writeCSV(paquetData, csvPaquePath, pHeaderlist);
     }
 }
