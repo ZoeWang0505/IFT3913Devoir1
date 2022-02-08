@@ -95,8 +95,22 @@ public class Evaluation {
             ex.printStackTrace();
         }
     }
-    static void parsingPaquet(File file,JSONObject eva_class){
+    static void parsingPaquet(String folder,JSONObject eva_paquet){
        //TODO:
+        int paquet_LOC;
+        int paquet_CLOC;
+        File file = new File(folder);
+        File [] packageContent = file.listFiles();
+
+        for(File content:packageContent){
+            if(content.isFile()){
+
+            }
+            else{
+
+            }
+        }
+
        //paquet_LOC : nombre de lignes de code d’un paquet (java package) -- la somme des LOC de ses classes
        //paquet_CLOC : nombre de lignes de code d’un paquet qui contiennent des commentaires
        //paquet_DC : densité de commentaires pour une classe : classe_DC = classe_CLOC / classe_LOC
