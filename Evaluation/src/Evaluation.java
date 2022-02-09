@@ -53,12 +53,12 @@ public class Evaluation {
 
     }
 
-/**
- * Function for parsing java file line to line counting code line 
- * number and comment line number
- * @param file input java file
- * @param eva_class the JSONObject contains the code infomation from java file
- */
+    /**
+     * Function for parsing java file line to line counting code line 
+     * number and comment line number
+     * @param file input java file
+     * @param eva_class the JSONObject contains the code infomation from java file
+     */
     static void parsingClass(File file,JSONObject eva_class){
         //Creating Scanner instance to read File in Java
         try {
@@ -131,12 +131,32 @@ public class Evaluation {
      * @return packge name of this file
      */
     static String getPackageName(File file){
-        //TODO:
+        //Creating Scanner instance to read File in Java
+        try {
+            Scanner scan = new Scanner(file);
+
+            //Reading each line of the file using Scanner class
+            while(scan.hasNextLine()){
+                String line = scan.nextLine();
+                if(line.compareTo("") == 0)
+                   continue;
+
+                if(line.contains("package")){
+                    int indexStart = line.indexOf("package") + 7;
+                    String packageName = line.substring(indexStart, line.length() - 1).trim();
+                    scan.close();
+                    return packageName;
+                }
+            }
+            scan.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
         return "";
     }
 
     /**
-     * 
+     * This function get JSONObject by packageName if it is existed in data
      * @param paquetdata paquet data is a JSONArray with all the package infomations
      * @param packageName check the package name if existed in paquetdata already
      * @return the JSONObject if the package existed. or null if it doesn't existed.
@@ -175,6 +195,8 @@ public class Evaluation {
                         JSONObject eva_paquet = getPackageJSON(paquetdata, packageName);
                         if(eva_paquet == null){
                             eva_paquet = new JSONObject();
+                            eva_paquet.put(pHeaderlist[0], path);
+                            eva_paquet.put(pHeaderlist[1], packageName);
                             parsingPaquet(eva_paquet, eva_class);
                             paquetdata.put(eva_paquet);
                         } else {
