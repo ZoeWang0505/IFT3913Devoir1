@@ -17,6 +17,12 @@ public class Evaluation {
    static String pHeaderlist [] = {"chemin", "paquet", "paquet_LOC", "paquet_CLOC", "paquet_DC"};
    static enum commentType {SINGLE_LINE, MULTICOMM_BEGIN, NON_COMM, MULTICOMM_END, IN_MULTCOMM};
    
+    /**
+     * function for check if the line of string contains any comments. 
+     * @param line one line of string from the java file
+     * @param inMultiCommtaire if this line is in a multi comment block
+     * @return commentType defined the comment type that the input string has
+     */
     static commentType containCommtaire(String line, Boolean inMultiCommtaire){
         if(!inMultiCommtaire){
             //Match if in single line comments such as \\ and /** */
@@ -47,7 +53,12 @@ public class Evaluation {
 
     }
 
-
+/**
+ * Function for parsing java file line to line counting code line 
+ * number and comment line number
+ * @param file input java file
+ * @param eva_class the JSONObject contains the code infomation from java file
+ */
     static void parsingClass(File file,JSONObject eva_class){
         //Creating Scanner instance to read File in Java
         try {
@@ -92,32 +103,57 @@ public class Evaluation {
             ex.printStackTrace();
         }
     }
-    static void parsingPaquet(File file,JSONObject eva_paquet){
-       //TODO:
-        int paquet_LOC;
-        int paquet_CLOC;
+
+    /**
+     * Collect Infomation from all the java files of this package
+     * @param eva_paquet JSONObject which contains le package infomation 
+     * @param eva_class JSONObject which contains le class infomation 
+     */
+    static void parsingPaquet(JSONObject eva_paquet, JSONObject eva_class){
         
-        //Incorrect. Please use file as a java file, same process as parsingClass()
-        
-        // File [] packageContent = file.listFiles();
+       int paquet_LOC;
+       int paquet_CLOC;
+        //TODO:
+        //Get infomation from eva_class then calculate for updating package data
 
-        // for(File content:packageContent){
-        //     if(content.isFile()){
-
-        //     }
-        //     else{
-
-        //     }
-        // }
 
        //paquet_LOC : nombre de lignes de code d’un paquet (java package) -- la somme des LOC de ses classes
        //paquet_CLOC : nombre de lignes de code d’un paquet qui contiennent des commentaires
        //paquet_DC : densité de commentaires pour une classe : classe_DC = classe_CLOC / classe_LOC
        //paquet_DC : densité de commentaires pour un paquet : paquet_DC = paquet_CLOC / paquet_LOC
        //
+
     }
 
+    /**
+     * Get the package name the java file belongs to
+     * @param file java file for evaluation
+     * @return packge name of this file
+     */
+    static String getPackageName(File file){
+        //TODO:
+        return "";
+    }
 
+    /**
+     * 
+     * @param paquetdata paquet data is a JSONArray with all the package infomations
+     * @param packageName check the package name if existed in paquetdata already
+     * @return the JSONObject if the package existed. or null if it doesn't existed.
+     */
+    static JSONObject getPackageJSON(JSONArray paquetdata, String packageName){
+        //TODO:
+
+        return null;
+    }
+
+    /**
+     * This function is for evaluating the target folder and prepare for the code quality report 
+     * @param folder the folder we a going to evaluate
+     * @param path the path for building the infomation fo file path
+     * @param classdata the data of JSONArray which used for generalize the final class csv report 
+     * @param paquetdatathe data of JSONArray which used for generalize the final package csv report 
+     */
     static void evaluate(File folder, String path,JSONArray classdata , JSONArray paquetdata){
         try {
              
@@ -135,10 +171,15 @@ public class Evaluation {
                         parsingClass(file, eva_class);
                         classdata.put(eva_class);
 
-                        JSONObject eva_paquet = new JSONObject();
-                        parsingPaquet(file, eva_paquet);
-                        paquetdata.put(eva_paquet);
-
+                        String packageName = getPackageName(file);
+                        JSONObject eva_paquet = getPackageJSON(paquetdata, packageName);
+                        if(eva_paquet == null){
+                            eva_paquet = new JSONObject();
+                            parsingPaquet(eva_paquet, eva_class);
+                            paquetdata.put(eva_paquet);
+                        } else {
+                            parsingPaquet(eva_paquet, eva_class);
+                        }
                     }
                     //
                 } else {
@@ -152,6 +193,12 @@ public class Evaluation {
         }
     }
 
+    /**
+     * Write the JSONArray data into csv file
+     * @param jsonData JSONArray with all the infomation from java files.
+     * @param filepath output file path for csv
+     * @param headerlist column header strings for the csv file.
+     */
     static void writeCSV(JSONArray jsonData, String filepath,String [] headerlist){
         try {
 
