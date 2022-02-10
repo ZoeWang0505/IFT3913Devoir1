@@ -162,15 +162,17 @@ public class Evaluation {
                 }
 
             }
+
             eva_class.put(cHeaderlist[2], lineNumber);//classe_LOC
             eva_class.put(cHeaderlist[3], commtaireline); //classe_CLOC    
             eva_class.put(cHeaderlist[4], (double)commtaireline/lineNumber); //classe_DC   
             eva_class.put(cHeaderlist[5], WMC); //WMC  
-            eva_class.put(cHeaderlist[6], (double)commtaireline/lineNumber/ WMC); //classe_BC  
+            eva_class.put(cHeaderlist[6], (WMC == 0) ?0:(double)commtaireline/lineNumber/ WMC); //classe_BC  
             scan.close();
 
         } catch (Exception ex) {
             ex.printStackTrace();
+            System.out.println(eva_class.get(cHeaderlist[1]));
         }
     }
 
@@ -188,6 +190,13 @@ public class Evaluation {
        eva_paquet.put(pHeaderlist[3], paquet_CLOC);
 
        eva_paquet.put(pHeaderlist[4], (double)paquet_CLOC / paquet_LOC);
+
+
+       int WCP =  (int) eva_paquet.get(pHeaderlist[5])+ (int) eva_class.get(cHeaderlist[5]);
+       eva_paquet.put(pHeaderlist[5], WCP);
+
+       eva_paquet.put(pHeaderlist[6], (WCP == 0)?0:(double)paquet_CLOC / paquet_LOC/WCP);
+
     }
 
     /**
@@ -228,7 +237,7 @@ public class Evaluation {
      */
     static boolean isNodeInFunction(String line, inLineType inline){
         //Match a key word of node
-        String pattern_node = "^(\\s)*(?!\\/\\/)(if|while|case)";
+        String pattern_node = "^(\\s)*(?!\\/\\/)(if|while|case|for)";
         Pattern r = Pattern.compile(pattern_node);
         Matcher m = r.matcher(line);
         if(m.find()){
@@ -272,6 +281,8 @@ public class Evaluation {
                             eva_paquet.put(pHeaderlist[2], 0); 
                             eva_paquet.put(pHeaderlist[3], 0); 
                             eva_paquet.put(pHeaderlist[4], 0); 
+                            eva_paquet.put(pHeaderlist[5], 0); 
+                            eva_paquet.put(pHeaderlist[6], 0); 
                             paquetdata.put(eva_paquet);
                         }
                         parsingPaquet(eva_paquet, eva_class);
@@ -348,6 +359,6 @@ public class Evaluation {
         evaluate(folder, path, classData, paquetData);
 
         writeCSV(classData, csvClassPath, cHeaderlist);
-        //writeCSV(paquetData, csvPaquePath, pHeaderlist);
+        writeCSV(paquetData, csvPaquePath, pHeaderlist);
     }
 }
