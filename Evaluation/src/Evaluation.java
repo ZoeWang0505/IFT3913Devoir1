@@ -242,7 +242,7 @@ public class Evaluation {
      * @param folder the folder we a going to evaluate
      * @param path the path for building the infomation fo file path
      * @param classdata the data of JSONArray which used for generalize the final class csv report 
-     * @param paquetdatathe data of JSONArray which used for generalize the final package csv report 
+     * @param paquetdata data of JSONArray which used for generalize the final package csv report
      */
     static void evaluate(File folder, String path,JSONArray classdata , JSONArray paquetdata){
         try {
