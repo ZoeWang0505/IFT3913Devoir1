@@ -13,11 +13,11 @@ import java.util.Iterator;
 import java.util.Scanner;
 
 public class Evaluation {
-   static String cHeaderlist [] = {"chemin", "class", "classe_LOC", "classe_CLOC", "classe_DC", "WMC", "classe_BC"};
-   static String pHeaderlist [] = {"chemin", "paquet", "paquet_LOC", "paquet_CLOC", "paquet_DC","WCP", "paquet_BC"};
-   static enum commentType {SINGLE_LINE, MULTICOMM_BEGIN, NON_COMM, MULTICOMM_END, IN_MULTCOMM};
+   static private String cHeaderlist [] = {"chemin", "class", "classe_LOC", "classe_CLOC", "classe_DC", "WMC", "classe_BC"};
+   static private String pHeaderlist [] = {"chemin", "paquet", "paquet_LOC", "paquet_CLOC", "paquet_DC","WCP", "paquet_BC"};
+   static private enum commentType {SINGLE_LINE, MULTICOMM_BEGIN, NON_COMM, MULTICOMM_END, IN_MULTCOMM};
 
-   static enum inLineType{ FUNC_BEGIN, IN_FUNC, FUNC_END, NON_FUNC};
+   static private enum inLineType{ FUNC_BEGIN, IN_FUNC, FUNC_END, NON_FUNC};
    
     /**
      * function for check if the line of string contains any comments. 
@@ -25,7 +25,7 @@ public class Evaluation {
      * @param inMultiCommtaire if this line is in a multi comment block
      * @return commentType defined the comment type that the input string has
      */
-    static commentType containCommtaire(String line, Boolean inMultiCommtaire){
+    static private commentType containCommtaire(String line, Boolean inMultiCommtaire){
         if(!inMultiCommtaire){
             //Match if in single line comments such as \\ and /** */
             String pattern = "\\/\\*(\\*(?!\\/)|[^*])*\\*\\/|\\/\\/";
@@ -61,7 +61,7 @@ public class Evaluation {
      * @param inFunction
      * @return inLineType from enum inLineType
      */
-    static inLineType getInLineType(String line, boolean inFunction){
+    static private inLineType getInLineType(String line, boolean inFunction){
         
         if(inFunction){
             if(line.trim().compareTo("}") == 0)
@@ -88,7 +88,7 @@ public class Evaluation {
      * @param file input java file
      * @param eva_class the JSONObject contains the code infomation from java file
      */
-    static void parsingClass(File file,JSONObject eva_class){
+    static private void parsingClass(File file,JSONObject eva_class){
         //Creating Scanner instance to read File in Java
         try {
             Scanner scan = new Scanner(file);
@@ -181,7 +181,7 @@ public class Evaluation {
      * @param eva_paquet JSONObject which contains le package infomation 
      * @param eva_class JSONObject which contains le class infomation 
      */
-    static void parsingPaquet(JSONObject eva_paquet, JSONObject eva_class){
+    static private void parsingPaquet(JSONObject eva_paquet, JSONObject eva_class){
         
        int paquet_LOC =  (int) eva_paquet.get(pHeaderlist[2])+ (int) eva_class.get(cHeaderlist[2]);
        eva_paquet.put(pHeaderlist[2], paquet_LOC);
@@ -204,7 +204,7 @@ public class Evaluation {
      * @param file java file for evaluation
      * @return packge name of this file
      */
-    static String getPackageName(File file){
+    static private String getPackageName(File file){
         //Creating Scanner instance to read File in Java
         try {
             Scanner scan = new Scanner(file);
@@ -235,7 +235,7 @@ public class Evaluation {
      * @param inline
      * @return
      */
-    static boolean isNodeInFunction(String line, inLineType inline){
+    static private boolean isNodeInFunction(String line, inLineType inline){
         //Match a key word of node
         String pattern_node = "^(\\s)*(?!\\/\\/)(if|while|case|for)";
         Pattern r = Pattern.compile(pattern_node);
@@ -246,7 +246,12 @@ public class Evaluation {
         return false;
     }
 
-    static String getClassName(File file){
+    /**
+     * getClassName: get class name from java file
+     * @param file inpout java file
+     * @return class name
+     */
+    static private String getClassName(File file){
         try {
             Scanner scan = new Scanner(file);
 
@@ -256,6 +261,7 @@ public class Evaluation {
                 if(line.compareTo("") == 0)
                    continue;
 
+                   //Only make sure there is a class be mentioned in java file.
                 if(line.contains(" class ")){
                     String fileName = file.getName();
                     String className =fileName.substring(0, fileName.indexOf(".java"));
@@ -361,7 +367,7 @@ public class Evaluation {
      * @param filepath output file path for csv
      * @param headerlist column header strings for the csv file.
      */
-    static void writeCSV(JSONArray jsonData, String filepath,String [] headerlist){
+    static private void writeCSV(JSONArray jsonData, String filepath,String [] headerlist){
         try {
 
             File file=new File(filepath);
