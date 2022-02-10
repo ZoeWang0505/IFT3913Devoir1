@@ -215,7 +215,7 @@ public class Evaluation {
                 if(line.compareTo("") == 0)
                    continue;
 
-                if(line.contains("package")){
+                if(line.contains("package ")){
                     int indexStart = line.indexOf("package") + 7;
                     String packageName = line.substring(indexStart, line.length() - 1).trim();
                     scan.close();
@@ -246,57 +246,113 @@ public class Evaluation {
         return false;
     }
 
+    static String getClassName(File file){
+        try {
+            Scanner scan = new Scanner(file);
+
+            //Reading each line of the file using Scanner class
+            while(scan.hasNextLine()){
+                String line = scan.nextLine();
+                if(line.compareTo("") == 0)
+                   continue;
+
+                if(line.contains(" class ")){
+                    String fileName = file.getName();
+                    String className =fileName.substring(0, fileName.indexOf(".java"));
+                    scan.close();
+                    return className;
+                }
+            }
+            scan.close();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return "";
+    }
+
     /**
      * This function is for evaluating the target folder and prepare for the code quality report 
      * @param folder the folder we a going to evaluate
      * @param path the path for building the infomation fo file path
      * @param classdata the data of JSONArray which used for generalize the final class csv report 
      * @param paquetdata data of JSONArray which used for generalize the final package csv report
+     * @return JSONObject contains info of evaluation de package
      */
-    static void evaluate(File folder, String path,JSONArray classdata , JSONArray paquetdata){
+    static private JSONObject evaluate(File folder, String path,JSONArray classdata , JSONArray paquetdata){
         try {
             String packageName ="";
-            JSONObject eva_paquet = null;
+            JSONObject eva_paquet = createPackageJSON();
             for (File file : folder.listFiles()) {
                 if (!file.isDirectory()) {
                     //
                     String fileName = file.getName();
                     if(fileName.endsWith(".java")){
                         JSONObject eva_class = new JSONObject();
-                        String className = file.getName();
-                        String chemin = path + "/" + className;
+                        String chemin = path + "/" + fileName;
                         
+                        String className = getClassName(file);
+                        if(className.compareTo("") == 0){
+                            continue;
+                        }
+
                         eva_class.put(cHeaderlist[0], chemin); //chemin
-                        eva_class.put(cHeaderlist[1], className.substring(0, className.indexOf(".java")));//class
+                        eva_class.put(cHeaderlist[1], className);//class
                         parsingClass(file, eva_class);
                         classdata.put(eva_class);
 
-                        if(packageName == "")
+                        if(packageName.compareTo("") == 0)
                             packageName = getPackageName(file);
 
-                        if(eva_paquet == null){
-                            eva_paquet = new JSONObject();
-                            eva_paquet.put(pHeaderlist[0], path);
-                            eva_paquet.put(pHeaderlist[1], packageName);   
-                            eva_paquet.put(pHeaderlist[2], 0); 
-                            eva_paquet.put(pHeaderlist[3], 0); 
-                            eva_paquet.put(pHeaderlist[4], 0); 
-                            eva_paquet.put(pHeaderlist[5], 0); 
-                            eva_paquet.put(pHeaderlist[6], 0); 
-                            paquetdata.put(eva_paquet);
+                        if(packageName.compareTo("") != 0 ){
+                            if(((String)eva_paquet.get(pHeaderlist[0])).compareTo("") == 0){
+                                eva_paquet.put(pHeaderlist[0], path);
+                            }
+                            if(((String)eva_paquet.get(pHeaderlist[1])).compareTo("") == 0){
+                                eva_paquet.put(pHeaderlist[1], packageName);
+                                paquetdata.put(eva_paquet);
+                            }   
+                            parsingPaquet(eva_paquet, eva_class);
                         }
-                        parsingPaquet(eva_paquet, eva_class);
                     }
                     //
                 } else {
                     String newPath = path + "/" + file.getName();
-                    evaluate(file, newPath, classdata, paquetdata);
-                }
+                    JSONObject subPackage = evaluate(file, newPath, classdata, paquetdata);
+
+                    if(eva_paquet != null){
+                        int paquet_LOC =  (int) eva_paquet.get(pHeaderlist[2])+ (int) subPackage.get(pHeaderlist[2]);
+                        eva_paquet.put(pHeaderlist[2], paquet_LOC);
                 
+                        int paquet_CLOC =  (int) eva_paquet.get(pHeaderlist[3]) + (int) subPackage.get(pHeaderlist[3]);
+                        eva_paquet.put(pHeaderlist[3], paquet_CLOC);
+                
+                        double paquet_DC = (paquet_LOC == 0)? 0:(double)paquet_CLOC / paquet_LOC;
+                        eva_paquet.put(pHeaderlist[4], paquet_DC);
+                
+                        int WCP =  (int) eva_paquet.get(pHeaderlist[5])+ (int) subPackage.get(pHeaderlist[5]);
+                        eva_paquet.put(pHeaderlist[5], WCP);
+                
+                        eva_paquet.put(pHeaderlist[6], (WCP == 0)?0:(double)paquet_DC/WCP);
+                    }
+                }
             }
+            return eva_paquet;
         } catch (IllegalArgumentException iae) {
             System.out.println("File Not Found");
         }
+        return null;
+    }
+
+    static private JSONObject  createPackageJSON(){
+        JSONObject eva_paquet = new JSONObject();
+        eva_paquet.put(pHeaderlist[0], "");
+        eva_paquet.put(pHeaderlist[1], "");   
+        eva_paquet.put(pHeaderlist[2], 0); 
+        eva_paquet.put(pHeaderlist[3], 0); 
+        eva_paquet.put(pHeaderlist[4], 0); 
+        eva_paquet.put(pHeaderlist[5], 0); 
+        eva_paquet.put(pHeaderlist[6], 0); 
+        return eva_paquet;
     }
 
     /**
