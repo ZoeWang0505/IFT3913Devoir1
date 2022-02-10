@@ -13,9 +13,11 @@ import java.util.Iterator;
 import java.util.Scanner;
 
 public class Evaluation {
-   static String cHeaderlist [] = {"chemin", "class", "classe_LOC", "classe_CLOC", "classe_DC"};
-   static String pHeaderlist [] = {"chemin", "paquet", "paquet_LOC", "paquet_CLOC", "paquet_DC"};
+   static String cHeaderlist [] = {"chemin", "class", "classe_LOC", "classe_CLOC", "classe_DC", "WMC", "classe_BC"};
+   static String pHeaderlist [] = {"chemin", "paquet", "paquet_LOC", "paquet_CLOC", "paquet_DC","WCP", "paquet_BC"};
    static enum commentType {SINGLE_LINE, MULTICOMM_BEGIN, NON_COMM, MULTICOMM_END, IN_MULTCOMM};
+
+   static enum inLineType{ FUNC_BEGIN, IN_FUNC, FUNC_END, NON_FUNC};
    
     /**
      * function for check if the line of string contains any comments. 
@@ -54,6 +56,33 @@ public class Evaluation {
     }
 
     /**
+     * getInLineType get InlineType 
+     * @param line
+     * @param inFunction
+     * @return inLineType from enum inLineType
+     */
+    static inLineType getInLineType(String line, boolean inFunction){
+        
+        if(inFunction){
+            if(line.trim().compareTo("}") == 0)
+                return inLineType.FUNC_END;
+            else
+                return inLineType.IN_FUNC;
+        }
+        else{
+            //Match a java function title
+            String pattern = "^\\s*(static\\s)*(public|private|protected)\\s.*\\(.*\\)\\s*\\{";
+            Pattern r = Pattern.compile(pattern);
+            Matcher m = r.matcher(line);
+            if(m.find()){
+                return inLineType.FUNC_BEGIN;
+            }
+            return inLineType.NON_FUNC;
+        }
+
+    }
+
+    /**
      * Function for parsing java file line to line counting code line 
      * number and comment line number
      * @param file input java file
@@ -68,6 +97,14 @@ public class Evaluation {
             int lineNumber = 0;
             int commtaireline = 0;
             boolean inMultiCommtaire = false;
+
+            //signal for if a function started.
+            boolean inFunction = false;
+            
+            //nodes number in a Method
+            int nodeNum = 0;
+            int WMC = 0;
+
             while(scan.hasNextLine()){
                 String line = scan.nextLine();
                 if(line.compareTo("") == 0)
@@ -93,10 +130,43 @@ public class Evaluation {
                     default:
                         break;
                 }
+
+                if(comType == commentType.MULTICOMM_BEGIN || 
+                comType == commentType.IN_MULTCOMM ||
+                comType == commentType.MULTICOMM_END){
+                    continue;
+                }
+
+                inLineType inline = getInLineType(line, inFunction);
+                switch (inline){
+                    case FUNC_BEGIN:
+                        inFunction = true;
+                        nodeNum = 0;
+                        break;
+                    case FUNC_END:
+                        WMC += nodeNum +1; //by form: WMC = 1 + noteNum  
+                        nodeNum = 0;
+                        inFunction = false;       
+                        break; 
+                    case IN_FUNC:
+                        if(comType != commentType.IN_MULTCOMM){// if it's not in comment blocks
+                            if(isNodeInFunction(line, inline)){
+                                nodeNum ++;
+                            }
+                        }
+                        break; 
+                    case NON_FUNC:
+                        break; 
+                    default:
+                        break;
+                }
+
             }
             eva_class.put(cHeaderlist[2], lineNumber);//classe_LOC
             eva_class.put(cHeaderlist[3], commtaireline); //classe_CLOC    
             eva_class.put(cHeaderlist[4], (double)commtaireline/lineNumber); //classe_DC   
+            eva_class.put(cHeaderlist[5], WMC); //WMC  
+            eva_class.put(cHeaderlist[6], (double)commtaireline/lineNumber/ WMC); //classe_BC  
             scan.close();
 
         } catch (Exception ex) {
@@ -111,18 +181,13 @@ public class Evaluation {
      */
     static void parsingPaquet(JSONObject eva_paquet, JSONObject eva_class){
         
-       int paquet_LOC;
-       int paquet_CLOC;
-        //TODO:
-        //Get infomation from eva_class then calculate for updating package data
+       int paquet_LOC =  (int) eva_paquet.get(pHeaderlist[2])+ (int) eva_class.get(cHeaderlist[2]);
+       eva_paquet.put(pHeaderlist[2], paquet_LOC);
 
+       int paquet_CLOC =  (int) eva_paquet.get(pHeaderlist[3]) + (int) eva_class.get(cHeaderlist[3]);
+       eva_paquet.put(pHeaderlist[3], paquet_CLOC);
 
-       //paquet_LOC : nombre de lignes de code d’un paquet (java package) -- la somme des LOC de ses classes
-       //paquet_CLOC : nombre de lignes de code d’un paquet qui contiennent des commentaires
-       //paquet_DC : densité de commentaires pour une classe : classe_DC = classe_CLOC / classe_LOC
-       //paquet_DC : densité de commentaires pour un paquet : paquet_DC = paquet_CLOC / paquet_LOC
-       //
-
+       eva_paquet.put(pHeaderlist[4], (double)paquet_CLOC / paquet_LOC);
     }
 
     /**
@@ -156,15 +221,20 @@ public class Evaluation {
     }
 
     /**
-     * This function get JSONObject by packageName if it is existed in data
-     * @param paquetdata paquet data is a JSONArray with all the package infomations
-     * @param packageName check the package name if existed in paquetdata already
-     * @return the JSONObject if the package existed. or null if it doesn't existed.
+     * isNodeInFunction: get if node in the line
+     * @param line
+     * @param inline
+     * @return
      */
-    static JSONObject getPackageJSON(JSONArray paquetdata, String packageName){
-        //TODO:
-
-        return null;
+    static boolean isNodeInFunction(String line, inLineType inline){
+        //Match a key word of node
+        String pattern_node = "^(\\s)*(?!\\/\\/)(if|while|case)";
+        Pattern r = Pattern.compile(pattern_node);
+        Matcher m = r.matcher(line);
+        if(m.find()){
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -176,7 +246,8 @@ public class Evaluation {
      */
     static void evaluate(File folder, String path,JSONArray classdata , JSONArray paquetdata){
         try {
-             
+            String packageName ="";
+            JSONObject eva_paquet = null;
             for (File file : folder.listFiles()) {
                 if (!file.isDirectory()) {
                     //
@@ -191,17 +262,19 @@ public class Evaluation {
                         parsingClass(file, eva_class);
                         classdata.put(eva_class);
 
-                        String packageName = getPackageName(file);
-                        JSONObject eva_paquet = getPackageJSON(paquetdata, packageName);
+                        if(packageName == "")
+                            packageName = getPackageName(file);
+
                         if(eva_paquet == null){
                             eva_paquet = new JSONObject();
                             eva_paquet.put(pHeaderlist[0], path);
-                            eva_paquet.put(pHeaderlist[1], packageName);
-                            parsingPaquet(eva_paquet, eva_class);
+                            eva_paquet.put(pHeaderlist[1], packageName);   
+                            eva_paquet.put(pHeaderlist[2], 0); 
+                            eva_paquet.put(pHeaderlist[3], 0); 
+                            eva_paquet.put(pHeaderlist[4], 0); 
                             paquetdata.put(eva_paquet);
-                        } else {
-                            parsingPaquet(eva_paquet, eva_class);
                         }
+                        parsingPaquet(eva_paquet, eva_class);
                     }
                     //
                 } else {
@@ -275,6 +348,6 @@ public class Evaluation {
         evaluate(folder, path, classData, paquetData);
 
         writeCSV(classData, csvClassPath, cHeaderlist);
-        writeCSV(paquetData, csvPaquePath, pHeaderlist);
+        //writeCSV(paquetData, csvPaquePath, pHeaderlist);
     }
 }
